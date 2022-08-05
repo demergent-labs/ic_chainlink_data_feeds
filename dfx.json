@@ -1,0 +1,12 @@
+{
+    "canisters": {
+        "data_feeds": {
+            "type": "custom",
+            "build": "npx azle data_feeds",
+            "root": "canisters/data_feeds",
+            "ts": "canisters/data_feeds/index.ts",
+            "candid": "canisters/data_feeds/index.did",
+            "wasm": "target/wasm32-unknown-unknown/release/data_feeds.wasm"
+        }
+    }
+}

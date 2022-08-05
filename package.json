@@ -1,0 +1,27 @@
+{
+  "name": "ic_chainlink_data_feeds",
+  "version": "0.0.0",
+  "description": "",
+  "scripts": {
+    "dfx_deploy": "npm run build_canister && npm run updrade_canister",
+    "dfx_install": "npm run create_canister && npm run build_canister && npm run install_canister",
+    "create_canister": "dfx canister create data_feeds",
+    "build_canister": "dfx build data_feeds",
+    "install_canister": "dfx canister install --wasm target/wasm32-unknown-unknown/release/data_feeds.wasm.gz data_feeds",
+    "updrade_canister": "dfx canister install --mode upgrade --wasm target/wasm32-unknown-unknown/release/data_feeds.wasm.gz data_feeds"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/demergent-labs/ic_chainlink_data_feeds.git"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/demergent-labs/ic_chainlink_data_feeds/issues"
+  },
+  "homepage": "https://github.com/demergent-labs/ic_chainlink_data_feeds#readme",
+  "dependencies": {
+    "azle": "github:demergent-labs/azle#566_http",
+    "utf8-encoder": "1.0.1"
+  }
+}
