@@ -1,0 +1,13 @@
+{
+    "scripts": {
+        "build": "snowpack build --polyfill-node"
+    },
+    "dependencies": {
+        "@dfinity/agent": "0.12.2",
+        "lit-html": "2.2.7",
+        "reduxular": "0.0.6"
+    },
+    "devDependencies": {
+        "snowpack": "3.8.8"
+    }
+}

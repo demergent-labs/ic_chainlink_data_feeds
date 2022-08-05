@@ -6,7 +6,17 @@
             "root": "canisters/data_feeds",
             "ts": "canisters/data_feeds/index.ts",
             "candid": "canisters/data_feeds/index.did",
-            "wasm": "target/wasm32-unknown-unknown/release/data_feeds.wasm"
+            "wasm": "target/wasm32-unknown-unknown/release/data_feeds.wasm",
+            "declarations": {
+                "output": "canisters/frontend/dfx_generated/data_feeds"
+            }
+        },
+        "frontend": {
+            "type": "assets",
+            "source": ["canisters/frontend/build"],
+            "declarations": {
+                "output": "canisters/frontend/dfx_generated/frontend"
+            }
         }
     }
 }

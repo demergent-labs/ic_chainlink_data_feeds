@@ -17,7 +17,7 @@ export let state: State = {
         uni_usd: '0x553303d460ee0afb37edff9be42922d8ff63220e'
     },
     fetching_data_feeds: false,
-    heartbeat_minutes: 1n,
+    heartbeat_minutes: 10n,
     last_heartbeat: ic.time(),
     latest_answers: null
 };

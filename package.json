@@ -8,7 +8,8 @@
     "create_canister": "dfx canister create data_feeds",
     "build_canister": "dfx build data_feeds",
     "install_canister": "dfx canister install --wasm target/wasm32-unknown-unknown/release/data_feeds.wasm.gz data_feeds",
-    "updrade_canister": "dfx canister install --mode upgrade --wasm target/wasm32-unknown-unknown/release/data_feeds.wasm.gz data_feeds"
+    "updrade_canister": "dfx canister install --mode upgrade --wasm target/wasm32-unknown-unknown/release/data_feeds.wasm.gz data_feeds",
+    "build": "dfx generate && cd canisters/frontend && npm run build"
   },
   "repository": {
     "type": "git",
