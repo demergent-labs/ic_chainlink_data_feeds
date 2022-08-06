@@ -1,14 +1,10 @@
-// TODO clean up naming and such
-// TODO should the utf8 decoding also be air tight? Why not?
-
-import { Async, CanisterResult, ic, ok, Query } from 'azle';
+import { Async, blob, CanisterResult, ic, ok, Query } from 'azle';
 import { HttpResponse, ManagementCanister } from 'azle/canisters/management';
-import { HttpResponseInfo, HttpResponseInfosResult, HttpResponseResult, JsonRpcResponse, JsonRpcResponsesInfo, LatestAnswerResult, LatestAnswersResult, ParseJsonRpcResponseResult, ProviderConfig, State } from './types';
 import encodeUtf8 from 'encode-utf8';
 import decodeUtf8 from 'decode-utf8';
 import { state } from './state';
+import { ConsensusInfo, DecodeUtf8SafelyResult, HttpResponseInfo, HttpResponseInfosWithErrors, HttpResponseResult, JsonRpcResponse, JsonRpcResponseResult, JsonRpcResponsesWithErrors, LatestAnswerResult, LatestAnswersResult, ParseJsonRpcResponseResult, ProviderConfig } from './types';
 
-// TODO test the costs again, I'm expected ~4 billion cycles
 export function* fetch_latest_answers(): Async<LatestAnswersResult> {
     const eth_usd_latest_answer_result: LatestAnswerResult = yield fetch_latest_answer(state.chainlink_contract_addresses.eth_usd, state.provider_configs.ethereum);
     const btc_usd_latest_answer_result: LatestAnswerResult = yield fetch_latest_answer(state.chainlink_contract_addresses.btc_usd, state.provider_configs.ethereum);
@@ -30,12 +26,40 @@ export function* fetch_latest_answers(): Async<LatestAnswersResult> {
 }
 
 function* fetch_latest_answer(data_feed_address: string, provider_config: ProviderConfig): Async<LatestAnswerResult> {
-    const http_response_infos_result: HttpResponseInfosResult = yield get_http_response_infos(data_feed_address, provider_config);
-    const http_response_infos = http_response_infos_result.http_response_infos;
+    const http_response_infos_with_errors: HttpResponseInfosWithErrors = yield get_http_response_infos_with_errors(data_feed_address, provider_config);
+    const http_response_infos = http_response_infos_with_errors.http_response_infos;
 
-    const json_rpc_responses_info: JsonRpcResponsesInfo = get_json_rpc_responses(http_response_infos);
-    const json_rpc_responses = json_rpc_responses_info.json_rpc_responses;
+    const json_rpc_responses_with_errors: JsonRpcResponsesWithErrors = get_json_rpc_responses_with_errors(http_response_infos);
+    const json_rpc_responses = json_rpc_responses_with_errors.json_rpc_responses;
 
+    const {
+        answers,
+        consensus,
+        heaviest_answer
+    } = get_consensus_info(provider_config, json_rpc_responses);
+
+    const errors = [
+        ...http_response_infos_with_errors.errors,
+        ...json_rpc_responses_with_errors.errors
+    ];
+
+    const data_feed_result: LatestAnswerResult = {
+        ok: {
+            answers,
+            consensus,
+            heaviest_answer,
+            errors,
+            time: ic.time()
+        }
+    };
+
+    return data_feed_result;
+}
+
+function get_consensus_info(
+    provider_config: ProviderConfig,
+    json_rpc_responses: JsonRpcResponse[]
+): ConsensusInfo {
     const answers = json_rpc_responses.map((json_rpc_response) => {
         return BigInt(parseInt(json_rpc_response.result));
     });
@@ -49,26 +73,18 @@ function* fetch_latest_answer(data_feed_address: string, provider_config: Provid
     const max_num_equal = Math.max(...num_equals);
     const max_num_equal_index = num_equals.indexOf(max_num_equal);
 
-    const heaviest_answer = answers[max_num_equal_index] ?? null;
     const consensus = max_num_equal >= provider_config.threshold;
 
-    const data_feed_result: LatestAnswerResult = {
-        ok: {
-            answers,
-            consensus,
-            heaviest_answer,
-            errors: [
-                ...http_response_infos_result.errors,
-                ...json_rpc_responses_info.errors
-            ],
-            time: ic.time()
-        }
-    };
+    const heaviest_answer = answers[max_num_equal_index] ?? null;
 
-    return data_feed_result;
+    return {
+        answers,
+        consensus,
+        heaviest_answer
+    };
 }
 
-function* get_http_response_infos(data_feed_address: string, provider_config: ProviderConfig): Async<HttpResponseInfosResult> {
+function* get_http_response_infos_with_errors(data_feed_address: string, provider_config: ProviderConfig): Async<HttpResponseInfosWithErrors> {
     let errors: string[] = [];
     let http_response_infos: HttpResponseInfo[] = [];
 
@@ -93,56 +109,85 @@ function* get_http_response_infos(data_feed_address: string, provider_config: Pr
     };
 }
 
-function get_json_rpc_responses(http_response_infos: HttpResponseInfo[]): JsonRpcResponsesInfo {
-    const json_rpc_responses_info: JsonRpcResponsesInfo = http_response_infos.reduce((result: JsonRpcResponsesInfo, http_response_info) => {
-        const json_rpc_response_string: string = decodeUtf8(Uint8Array.from(http_response_info.http_response.body)); // TODO http_response.body is already a Uint8Array, but it seems that Boa doesn't recognize instanceof unless we wrap here, wich the decodeutf8 library uses
-        const parse_json_rpc_response_result: ParseJsonRpcResponseResult = parse_json_rpc_response(json_rpc_response_string, http_response_info.provider_url);
+function get_json_rpc_responses_with_errors(http_response_infos: HttpResponseInfo[]): JsonRpcResponsesWithErrors {
+    const json_rpc_responses_info: JsonRpcResponsesWithErrors = http_response_infos.reduce((result: JsonRpcResponsesWithErrors, http_response_info) => {
+        const json_rpc_response_result = get_json_rpc_response(http_response_info);
 
-        if (!ok(parse_json_rpc_response_result)) {
+        if (ok(json_rpc_response_result)) {
+            return {
+                ...result,
+                json_rpc_responses: [
+                    ...result.json_rpc_responses,
+                    json_rpc_response_result.ok
+                ]
+            };
+        }
+        else {
             return {
                 ...result,
                 errors: [
                     ...result.errors,
-                    parse_json_rpc_response_result.err as string
+                    json_rpc_response_result.err as string
                 ]
             };
         }
-
-        const json_rpc_response = parse_json_rpc_response_result.ok;
-
-        if (http_response_info.http_response.status !== 200n) {
-            return {
-                ...result,
-                errors: [
-                    ...result.errors,
-                    `HttpResponse error (${http_response_info.provider_url}): response has status ${http_response_info.http_response.status}`
-                ]
-            };
-        }
-
-        if (json_rpc_response.error !== undefined) {
-            return {
-                ...result,
-                errors: [
-                    ...result.errors,
-                    `JsonRpcResponse error (${http_response_info.provider_url}): code: ${json_rpc_response.error.code}, message: ${json_rpc_response.error.message}`
-                ]
-            };
-        }
-
-        return {
-            ...result,
-            json_rpc_responses: [
-                ...result.json_rpc_responses,
-                json_rpc_response
-            ]
-        };
     }, {
         errors: [],
         json_rpc_responses: []
     });
 
     return json_rpc_responses_info;
+}
+
+function get_json_rpc_response(http_response_info: HttpResponseInfo): JsonRpcResponseResult {
+    const decode_utf8_safely_result: DecodeUtf8SafelyResult = decode_utf8_safely(http_response_info.http_response.body, http_response_info.provider_url);
+
+    if (!ok(decode_utf8_safely_result)) return {
+        err: decode_utf8_safely_result.err
+    };
+
+    const json_rpc_response_string = decode_utf8_safely_result.ok;
+
+    const parse_json_rpc_response_result: ParseJsonRpcResponseResult = parse_json_rpc_response(json_rpc_response_string, http_response_info.provider_url);
+
+    if (!ok(parse_json_rpc_response_result)) {
+        return {
+            err: parse_json_rpc_response_result.err as string
+        };
+    }
+
+    const json_rpc_response = parse_json_rpc_response_result.ok;
+
+    if (http_response_info.http_response.status !== 200n) {
+        return {
+            err: `HttpResponse error (${http_response_info.provider_url}): response has status ${http_response_info.http_response.status}`
+        };
+    }
+
+    if (json_rpc_response.error !== undefined) {
+        return {
+            err: `JsonRpcResponse error (${http_response_info.provider_url}): code: ${json_rpc_response.error.code}, message: ${json_rpc_response.error.message}`
+        };
+    }
+
+    return {
+        ok: json_rpc_response
+    };
+}
+
+function decode_utf8_safely(encoded: blob, provider_url: string): DecodeUtf8SafelyResult {
+    try {
+        const decoded_string = decodeUtf8(Uint8Array.from(encoded)); // TODO encoded is already a Uint8Array but Boa may have a bug requiring the extra Uint8Array.from
+
+        return {
+            ok: decoded_string
+        };
+    }
+    catch(error) {
+        return {
+            err: `Decode utf8 error (${provider_url}): ${(error as any).toString()}`
+        };
+    }
 }
 
 function parse_json_rpc_response(json_rpc_response_string: string, provider_url: string): ParseJsonRpcResponseResult {

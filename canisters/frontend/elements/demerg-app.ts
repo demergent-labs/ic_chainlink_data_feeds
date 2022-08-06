@@ -31,12 +31,16 @@ class DemergApp extends HTMLElement {
     async connectedCallback() {
         this.store.data_feeds_state = await this.fetch_data_feeds_state();
 
-        console.log('this.store.data_feeds_state', this.store.data_feeds_state);
+        console.log('eth_usd', this.store.data_feeds_state.latest_answers?.eth_usd);
+        console.log('btc_usd', this.store.data_feeds_state.latest_answers?.btc_usd);
+        console.log('icp_usd', this.store.data_feeds_state.latest_answers?.icp_usd);
 
         setInterval(async () => {
             this.store.data_feeds_state = await this.fetch_data_feeds_state();
 
-            console.log('this.store.data_feeds_state', this.store.data_feeds_state);
+            console.log('eth_usd', this.store.data_feeds_state.latest_answers?.eth_usd);
+            console.log('btc_usd', this.store.data_feeds_state.latest_answers?.btc_usd);
+            console.log('icp_usd', this.store.data_feeds_state.latest_answers?.icp_usd);
         }, 30000);
     }
 

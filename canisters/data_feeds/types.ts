@@ -1,6 +1,27 @@
 import { int, nat32, nat64, Opt, Variant } from 'azle';
 import { HttpResponse } from 'azle/canisters/management';
 
+export type ConsensusInfo = {
+    answers: int[];
+    consensus: boolean;
+    heaviest_answer: int;
+};
+
+export type DecodeUtf8SafelyResult = Variant<{
+    ok: string;
+    err: string;
+}>;
+
+export type HttpResponseInfo = {
+    http_response: HttpResponse;
+    provider_url: string;
+};
+
+export type HttpResponseInfosWithErrors = {
+    errors: string[];
+    http_response_infos: HttpResponseInfo[];
+};
+
 export type HttpResponseResult = Variant<{
     ok: HttpResponse;
     err: string;
@@ -16,19 +37,9 @@ export type JsonRpcResponse = {
     };
 };
 
-export type HttpResponseInfo = {
-    http_response: HttpResponse;
-    provider_url: string;
-};
-
-export type HttpResponseInfosResult = {
+export type JsonRpcResponsesWithErrors = {
     errors: string[];
-    http_response_infos: HttpResponseInfo[];
-};
-
-export type JsonRpcResponsesInfo = {
     json_rpc_responses: JsonRpcResponse[];
-    errors: string[];
 };
 
 export type JsonRpcResponseResult = Variant<{
@@ -44,16 +55,16 @@ export type LatestAnswer = {
     time: nat64;
 };
 
+export type LatestAnswerResult = Variant<{
+    ok: LatestAnswer;
+    err: string;
+}>;
+
 export type LatestAnswers = {
     eth_usd: LatestAnswer;
     btc_usd: LatestAnswer;
     icp_usd: LatestAnswer;
 };
-
-export type LatestAnswerResult = Variant<{
-    ok: LatestAnswer;
-    err: string;
-}>;
 
 export type LatestAnswersResult = Variant<{
     ok: LatestAnswers;

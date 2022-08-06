@@ -29,6 +29,4 @@ export function* heartbeat(): Heartbeat {
     };
 
     state.fetching_data_feeds = false;
-
-    console.log(new Date().toISOString(), JSON.stringify(state, (_, value) => typeof value === 'bigint' ? value.toString() : value, 4));
 }
