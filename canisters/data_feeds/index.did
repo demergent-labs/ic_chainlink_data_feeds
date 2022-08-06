@@ -1,13 +1,17 @@
 type State = record {
-    "chainlink_contract_addresses": record { "eth_usd": text; "btc_usd": text; "link_usd": text; "aave_usd": text; "bnb_usd": text; "uni_usd": text; };
+    "chainlink_contract_addresses": record { "eth_usd": text; "btc_usd": text; "icp_usd": text; };
     "fetching_data_feeds": bool;
     "heartbeat_minutes": nat64;
-    "last_heartbeat": nat64;
+    "last_heartbeat": opt nat64;
     "latest_answers": opt LatestAnswers;
+    "provider_configs": ProviderConfigs;
 };
 
 type LatestAnswer = record {
-    "answer": int;
+    "answers": vec int;
+    "consensus": bool;
+    "errors": vec text;
+    "heaviest_answer": opt int;
     "time": nat64;
 };
 
@@ -95,10 +99,17 @@ type ProvisionalCreateCanisterWithCyclesResult = record {
 type LatestAnswers = record {
     "eth_usd": LatestAnswer;
     "btc_usd": LatestAnswer;
-    "link_usd": LatestAnswer;
-    "aave_usd": LatestAnswer;
-    "bnb_usd": LatestAnswer;
-    "uni_usd": LatestAnswer;
+    "icp_usd": LatestAnswer;
+};
+
+type ProviderConfigs = record {
+    "bsc": ProviderConfig;
+    "ethereum": ProviderConfig;
+};
+
+type ProviderConfig = record {
+    "threshold": nat32;
+    "urls": vec text;
 };
 
 type HttpHeader = record {
@@ -126,13 +137,10 @@ type HttpMethod = variant { "GET": null; "HEAD": null; "POST": null };
 
 type CanisterStatus = variant { "running": null; "stopping": null; "stopped": null };
 
-service: (text) -> {
+service: {
     "get_state": () -> (State) query;
     "get_latest_answer_eth_usd": () -> (opt LatestAnswer) query;
     "get_latest_answer_btc_usd": () -> (opt LatestAnswer) query;
-    "get_latest_answer_link_usd": () -> (opt LatestAnswer) query;
-    "get_latest_answer_aave_usd": () -> (opt LatestAnswer) query;
-    "get_latest_answer_bnb_usd": () -> (opt LatestAnswer) query;
-    "get_latest_answer_uni_usd": () -> (opt LatestAnswer) query;
+    "get_latest_answer_icp_usd": () -> (opt LatestAnswer) query;
     "get_data_feed_latest_answer_transform": (HttpResponse) -> (HttpResponse) query;
 }

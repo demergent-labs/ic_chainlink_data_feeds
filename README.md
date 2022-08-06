@@ -4,6 +4,9 @@ This is an example project showing how to use the IC outgoing HTTP requests feat
 
 The following curl commands show you how to use the Ethereum JSON RPC API directly to pull the latest answers from Chainlink price data feeds. This example essentially does the same thing, but from within a canister:
 
+Open Ethereum provider URLs found here: https://ethereumnodes.com/
+Open BSC provider URLs found here: https://docs.bscscan.com/misc-tools-and-utilities/public-rpc-nodes
+
 ```bash
 # Chainlink ETH/USD: https://data.chain.link/ethereum/mainnet/crypto-usd/eth-usd
 # 0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419 is the ETH/USD Chainlink data feed Ethereum smart contract address

@@ -1,3 +1,6 @@
+// TODO let's add nice looking web components and then prepare to launch the initial version
+// TODO show consensus, heaviest answer, and the other answers as well. Give the user all of the info they need
+
 import { ActorSubclass } from '@dfinity/agent';
 import { createActor } from '../dfx_generated/data_feeds';
 import { _SERVICE } from '../dfx_generated/data_feeds/data_feeds.did';
@@ -42,7 +45,22 @@ class DemergApp extends HTMLElement {
 
         return {
             ...data_feeds_state,
-            latest_answers: data_feeds_state.latest_answers.length === 0 ? null : data_feeds_state.latest_answers[0]
+            last_heartbeat: data_feeds_state.last_heartbeat.length === 0 ? null : data_feeds_state.last_heartbeat[0],
+            latest_answers: data_feeds_state.latest_answers.length === 0 ? null : {
+                ...data_feeds_state.latest_answers[0],
+                eth_usd: {
+                    ...data_feeds_state.latest_answers[0].eth_usd,
+                    heaviest_answer: data_feeds_state.latest_answers[0].eth_usd.heaviest_answer.length === 0 ? null : data_feeds_state.latest_answers[0].eth_usd.heaviest_answer[0]
+                },
+                btc_usd: {
+                    ...data_feeds_state.latest_answers[0].btc_usd,
+                    heaviest_answer: data_feeds_state.latest_answers[0].btc_usd.heaviest_answer.length === 0 ? null : data_feeds_state.latest_answers[0].btc_usd.heaviest_answer[0]
+                },
+                icp_usd: {
+                    ...data_feeds_state.latest_answers[0].icp_usd,
+                    heaviest_answer: data_feeds_state.latest_answers[0].icp_usd.heaviest_answer.length === 0 ? null : data_feeds_state.latest_answers[0].icp_usd.heaviest_answer[0]
+                }
+            }
         };
     }
 
@@ -58,24 +76,9 @@ class DemergApp extends HTMLElement {
         } = get_price_display_info(state.data_feeds_state?.latest_answers?.btc_usd);
 
         const {
-            price: link_usd_price,
-            updated_at: link_usd_updated_at
-        } = get_price_display_info(state.data_feeds_state?.latest_answers?.link_usd);
-
-        const {
-            price: aave_usd_price,
-            updated_at: aave_usd_updated_at
-        } = get_price_display_info(state.data_feeds_state?.latest_answers?.aave_usd);
-
-        const {
-            price: bnb_usd_price,
-            updated_at: bnb_usd_updated_at
-        } = get_price_display_info(state.data_feeds_state?.latest_answers?.bnb_usd);
-
-        const {
-            price: uni_usd_price,
-            updated_at: uni_usd_updated_at
-        } = get_price_display_info(state.data_feeds_state?.latest_answers?.uni_usd);
+            price: icp_usd_price,
+            updated_at: icp_usd_updated_at
+        } = get_price_display_info(state.data_feeds_state?.latest_answers?.icp_usd);
 
         return html`
             <style>
@@ -83,26 +86,17 @@ class DemergApp extends HTMLElement {
             </style>
 
             <div>Heartbeat every: ${state.data_feeds_state === null ? 'Loading...' : `${state.data_feeds_state.heartbeat_minutes} minute${state.data_feeds_state.heartbeat_minutes === 1n ? '' : 's'}`}</div>
-            <div>Last Heartbeat at: ${state.data_feeds_state === null ? 'Loading...' : convert_nanoseconds_to_date(state.data_feeds_state.last_heartbeat)}</div>
+            <div>Last Heartbeat at: ${state.data_feeds_state === null || state.data_feeds_state.last_heartbeat === null ? 'Loading...' : convert_nanoseconds_to_date(state.data_feeds_state.last_heartbeat)}</div>
 
             <br>
 
-            <div>ETH/USD: ${eth_usd_price}, ${eth_usd_updated_at}</div>
+            <div>ETH/USD: ${eth_usd_price}, ${eth_usd_updated_at}, consensus: ${state.data_feeds_state?.latest_answers?.eth_usd.consensus}, number of answers: ${state.data_feeds_state?.latest_answers?.eth_usd.answers.length}, threshold required: ${state.data_feeds_state?.provider_configs.ethereum.threshold}</div>
             <br>
 
-            <div>BTC/USD: ${btc_usd_price}, ${btc_usd_updated_at}</div>
+            <div>BTC/USD: ${btc_usd_price}, ${btc_usd_updated_at}, consensus: ${state.data_feeds_state?.latest_answers?.btc_usd.consensus}, number of answers: ${state.data_feeds_state?.latest_answers?.btc_usd.answers.length}, threshold required: ${state.data_feeds_state?.provider_configs.ethereum.threshold}</div>
             <br>
 
-            <div>LINK/USD: ${link_usd_price}, ${link_usd_updated_at}</div>
-            <br>
-
-            <div>AAVE/USD: ${aave_usd_price}, ${aave_usd_updated_at}</div>
-            <br>
-
-            <div>BNB/USD: ${bnb_usd_price}, ${bnb_usd_updated_at}</div>
-            <br>
-
-            <div>UNI/USD: ${uni_usd_price}, ${uni_usd_updated_at}</div>
+            <div>ICP/USD: ${icp_usd_price}, ${icp_usd_updated_at}, consensus: ${state.data_feeds_state?.latest_answers?.icp_usd.consensus}, number of answers: ${state.data_feeds_state?.latest_answers?.icp_usd.answers.length}, threshold required: ${state.data_feeds_state?.provider_configs.bsc.threshold}</div>
             <br>
         `;
     }
@@ -130,7 +124,7 @@ function get_price_display_info(latest_answer: LatestAnswer | undefined): {
     price: string;
     updated_at: string;
 } {
-    const price = latest_answer === undefined ? 'price is loading' : format_number_to_usd(Number(latest_answer.answer / BigInt(10 ** 6)) / 100);
+    const price = latest_answer === undefined ? 'price is loading' : format_number_to_usd(Number((latest_answer.heaviest_answer ?? 0n) / BigInt(10 ** 6)) / 100);
     const updated_at = latest_answer === undefined ? 'updated at time is loading' : `updated at ${convert_nanoseconds_to_date(latest_answer.time)}`;
 
     return {

@@ -1,4 +1,4 @@
-import { int, nat64, Opt, Stable, Variant } from 'azle';
+import { int, nat32, nat64, Opt, Variant } from 'azle';
 import { HttpResponse } from 'azle/canisters/management';
 
 export type HttpResponseResult = Variant<{
@@ -16,18 +16,38 @@ export type JsonRpcResponse = {
     };
 };
 
+export type HttpResponseInfo = {
+    http_response: HttpResponse;
+    provider_url: string;
+};
+
+export type HttpResponseInfosResult = {
+    errors: string[];
+    http_response_infos: HttpResponseInfo[];
+};
+
+export type JsonRpcResponsesInfo = {
+    json_rpc_responses: JsonRpcResponse[];
+    errors: string[];
+};
+
+export type JsonRpcResponseResult = Variant<{
+    ok: JsonRpcResponse;
+    err: string;
+}>;
+
 export type LatestAnswer = {
-    answer: int;
+    answers: int[];
+    consensus: boolean;
+    errors: string[];
+    heaviest_answer: Opt<int>;
     time: nat64;
 };
 
 export type LatestAnswers = {
     eth_usd: LatestAnswer;
     btc_usd: LatestAnswer;
-    link_usd: LatestAnswer;
-    aave_usd: LatestAnswer;
-    bnb_usd: LatestAnswer;
-    uni_usd: LatestAnswer;
+    icp_usd: LatestAnswer;
 };
 
 export type LatestAnswerResult = Variant<{
@@ -40,21 +60,30 @@ export type LatestAnswersResult = Variant<{
     err: string;
 }>;
 
-export type StableStorage = Stable<{
-    ethereum_url: string;
+export type ParseJsonRpcResponseResult = Variant<{
+    ok: JsonRpcResponse;
+    err: string;
 }>;
+
+export type ProviderConfig = {
+    threshold: nat32;
+    urls: string[];
+};
+
+export type ProviderConfigs = {
+    bsc: ProviderConfig;
+    ethereum: ProviderConfig;
+};
 
 export type State = {
     chainlink_contract_addresses: {
         eth_usd: string,
         btc_usd: string,
-        link_usd: string,
-        aave_usd: string,
-        bnb_usd: string,
-        uni_usd: string
+        icp_usd: string
     };
     fetching_data_feeds: boolean;
     heartbeat_minutes: nat64;
-    last_heartbeat: nat64;
+    last_heartbeat: Opt<nat64>;
     latest_answers: Opt<LatestAnswers>;
+    provider_configs: ProviderConfigs;
 };

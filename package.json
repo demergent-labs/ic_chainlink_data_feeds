@@ -23,6 +23,7 @@
   "homepage": "https://github.com/demergent-labs/ic_chainlink_data_feeds#readme",
   "dependencies": {
     "azle": "github:demergent-labs/azle#566_http",
-    "utf8-encoder": "1.0.1"
+    "decode-utf8": "1.0.1",
+    "encode-utf8": "2.0.0"
   }
 }
