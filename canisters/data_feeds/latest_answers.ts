@@ -1,9 +1,23 @@
 import { Async, blob, CanisterResult, ic, ok, Query } from 'azle';
 import { HttpResponse, ManagementCanister } from 'azle/canisters/management';
-import encodeUtf8 from 'encode-utf8';
 import decodeUtf8 from 'decode-utf8';
+import encodeUtf8 from 'encode-utf8';
 import { state } from './state';
-import { ConsensusInfo, DecodeUtf8SafelyResult, HttpResponseInfo, HttpResponseInfosWithErrors, HttpResponseResult, JsonRpcResponse, JsonRpcResponseResult, JsonRpcResponsesWithErrors, LatestAnswer, LatestAnswers, ParseJsonRpcResponseResult, ProviderConfig } from './types';
+import {
+    ConsensusInfo,
+    DecodeUtf8SafelyResult,
+    HttpResponseInfo,
+    HttpResponseInfosWithErrors,
+    HttpResponseResult,
+    JsonRpcResponse,
+    JsonRpcResponseResult,
+    JsonRpcResponsesWithErrors,
+    LatestAnswer,
+    LatestAnswers,
+    ParseJsonRpcResponseResult,
+    ProviderConfig,
+    TotalNumAnswers
+} from './types';
 
 export function* fetch_latest_answers(): Async<LatestAnswers> {
     const eth_usd_latest_answer: LatestAnswer = yield fetch_latest_answer(state.chainlink_contract_addresses.eth_usd, state.provider_configs.ethereum);
@@ -48,27 +62,34 @@ function* fetch_latest_answer(data_feed_address: string, provider_config: Provid
     return latest_answer;
 }
 
-// TODO redo this algorithm using a hashmap sorting thing
 function get_consensus_info(
     provider_config: ProviderConfig,
     json_rpc_responses: JsonRpcResponse[]
 ): ConsensusInfo {
+    if (json_rpc_responses.length === 0) {
+        return {
+            answers: [],
+            consensus: false,
+            heaviest_answer: null
+        };
+    }
+
     const answers = json_rpc_responses.map((json_rpc_response) => {
-        return BigInt(parseInt(json_rpc_response.result));
+        return BigInt(json_rpc_response.result);
     });
 
-    const num_equals = answers.map((outer_answer) => {
-        const num_equal = answers.filter((inner_answer) => outer_answer === inner_answer).length;
+    const total_num_answers: TotalNumAnswers = answers.reduce((result: TotalNumAnswers, answer) => {
+        return {
+            ...result,
+            [answer.toString()]: (result[answer.toString()] ?? 0) + 1
+        };
+    }, {});
+    const total_num_answers_sorted_entries = Object.entries(total_num_answers).sort((entry_a, entry_b) => entry_a[1] > entry_b[1] ? -1 : entry_a[1] < entry_b[1] ? 1 : 0);
 
-        return num_equal;
-    });
-
-    const max_num_equal = Math.max(...num_equals);
-    const max_num_equal_index = num_equals.indexOf(max_num_equal);
-
+    const max_entry = total_num_answers_sorted_entries[0];
+    const max_num_equal = max_entry[1];
     const consensus = max_num_equal >= provider_config.threshold;
-
-    const heaviest_answer = answers[max_num_equal_index] ?? null;
+    const heaviest_answer = get_heaviest_answer(total_num_answers_sorted_entries);
 
     return {
         answers,
@@ -76,6 +97,21 @@ function get_consensus_info(
         heaviest_answer
     };
 }
+
+function get_heaviest_answer(entries: [string, number][]): bigint | null {
+    const first_entry = entries[0];
+    const second_entry = entries[1];
+
+    if (
+        entries.length > 1 &&
+        first_entry[1] === second_entry[1]
+    ) {
+        return null;
+    }
+
+    return BigInt(first_entry[0]);
+}
+
 
 function* get_http_response_infos_with_errors(data_feed_address: string, provider_config: ProviderConfig): Async<HttpResponseInfosWithErrors> {
     let errors: string[] = [];

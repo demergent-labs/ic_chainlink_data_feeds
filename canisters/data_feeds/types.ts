@@ -4,7 +4,7 @@ import { HttpResponse } from 'azle/canisters/management';
 export type ConsensusInfo = {
     answers: int[];
     consensus: boolean;
-    heaviest_answer: int;
+    heaviest_answer: Opt<int>;
 };
 
 export type DecodeUtf8SafelyResult = Variant<{
@@ -87,4 +87,8 @@ export type State = {
     last_heartbeat: Opt<nat64>;
     latest_answers: Opt<LatestAnswers>;
     provider_configs: ProviderConfigs;
+};
+
+export type TotalNumAnswers = {
+    [answer: string]: number;
 };

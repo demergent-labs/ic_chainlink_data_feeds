@@ -30,7 +30,7 @@ class DemergApp extends HTMLElement {
 
     async connectedCallback() {
         await this.set_and_log_data_feeds();
-        setInterval(this.set_and_log_data_feeds.bind(this), 30000);
+        setInterval(this.set_and_log_data_feeds.bind(this), 30_000);
     }
 
     async set_and_log_data_feeds() {
