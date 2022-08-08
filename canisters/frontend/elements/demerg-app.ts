@@ -153,6 +153,8 @@ class DemergApp extends HTMLElement {
                         </div>
                     </div>
                 </div>
+
+                <a href="" target="_blank" style="color: white; text-decoration: none; position: absolute; bottom: 0px; right: 0px; padding: 1rem">Open Source</a>
             </sp-theme>
 
         `;
