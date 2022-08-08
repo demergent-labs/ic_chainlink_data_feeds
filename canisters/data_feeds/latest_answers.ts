@@ -3,29 +3,23 @@ import { HttpResponse, ManagementCanister } from 'azle/canisters/management';
 import encodeUtf8 from 'encode-utf8';
 import decodeUtf8 from 'decode-utf8';
 import { state } from './state';
-import { ConsensusInfo, DecodeUtf8SafelyResult, HttpResponseInfo, HttpResponseInfosWithErrors, HttpResponseResult, JsonRpcResponse, JsonRpcResponseResult, JsonRpcResponsesWithErrors, LatestAnswerResult, LatestAnswersResult, ParseJsonRpcResponseResult, ProviderConfig } from './types';
+import { ConsensusInfo, DecodeUtf8SafelyResult, HttpResponseInfo, HttpResponseInfosWithErrors, HttpResponseResult, JsonRpcResponse, JsonRpcResponseResult, JsonRpcResponsesWithErrors, LatestAnswer, LatestAnswers, ParseJsonRpcResponseResult, ProviderConfig } from './types';
 
-export function* fetch_latest_answers(): Async<LatestAnswersResult> {
-    const eth_usd_latest_answer_result: LatestAnswerResult = yield fetch_latest_answer(state.chainlink_contract_addresses.eth_usd, state.provider_configs.ethereum);
-    const btc_usd_latest_answer_result: LatestAnswerResult = yield fetch_latest_answer(state.chainlink_contract_addresses.btc_usd, state.provider_configs.ethereum);
-    const icp_usd_latest_answer_result: LatestAnswerResult = yield fetch_latest_answer(state.chainlink_contract_addresses.icp_usd, state.provider_configs.bsc);
+export function* fetch_latest_answers(): Async<LatestAnswers> {
+    const eth_usd_latest_answer: LatestAnswer = yield fetch_latest_answer(state.chainlink_contract_addresses.eth_usd, state.provider_configs.ethereum);
+    const btc_usd_latest_answer: LatestAnswer = yield fetch_latest_answer(state.chainlink_contract_addresses.btc_usd, state.provider_configs.ethereum);
+    const icp_usd_latest_answer: LatestAnswer = yield fetch_latest_answer(state.chainlink_contract_addresses.icp_usd, state.provider_configs.bsc);
 
-    if (!ok(eth_usd_latest_answer_result)) return { err: eth_usd_latest_answer_result.err };
-    if (!ok(btc_usd_latest_answer_result)) return { err: btc_usd_latest_answer_result.err };
-    if (!ok(icp_usd_latest_answer_result)) return { err: icp_usd_latest_answer_result.err };
-
-    const data_feeds_result: LatestAnswersResult = {
-        ok: {
-            eth_usd: eth_usd_latest_answer_result.ok,
-            btc_usd: btc_usd_latest_answer_result.ok,
-            icp_usd: icp_usd_latest_answer_result.ok
-        }
+    const data_feeds_result: LatestAnswers = {
+        eth_usd: eth_usd_latest_answer,
+        btc_usd: btc_usd_latest_answer,
+        icp_usd: icp_usd_latest_answer
     };
 
     return data_feeds_result;
 }
 
-function* fetch_latest_answer(data_feed_address: string, provider_config: ProviderConfig): Async<LatestAnswerResult> {
+function* fetch_latest_answer(data_feed_address: string, provider_config: ProviderConfig): Async<LatestAnswer> {
     const http_response_infos_with_errors: HttpResponseInfosWithErrors = yield get_http_response_infos_with_errors(data_feed_address, provider_config);
     const http_response_infos = http_response_infos_with_errors.http_response_infos;
 
@@ -43,19 +37,18 @@ function* fetch_latest_answer(data_feed_address: string, provider_config: Provid
         ...json_rpc_responses_with_errors.errors
     ];
 
-    const data_feed_result: LatestAnswerResult = {
-        ok: {
-            answers,
-            consensus,
-            heaviest_answer,
-            errors,
-            time: ic.time()
-        }
+    const latest_answer: LatestAnswer = {
+        answers,
+        consensus,
+        heaviest_answer,
+        errors,
+        time: ic.time()
     };
 
-    return data_feed_result;
+    return latest_answer;
 }
 
+// TODO redo this algorithm using a hashmap sorting thing
 function get_consensus_info(
     provider_config: ProviderConfig,
     json_rpc_responses: JsonRpcResponse[]
@@ -229,7 +222,7 @@ function* get_latest_answer_http_response(data_feed_address: string, provider_ur
                 })
             )),
             transform_method_name: 'get_data_feed_latest_answer_transform'
-        }).with_cycles(500_000_000n);
+        }).with_cycles(500_000_000n); // TODO consider breaking this out into costs
 
     return http_response_result;
 }

@@ -55,21 +55,11 @@ export type LatestAnswer = {
     time: nat64;
 };
 
-export type LatestAnswerResult = Variant<{
-    ok: LatestAnswer;
-    err: string;
-}>;
-
 export type LatestAnswers = {
     eth_usd: LatestAnswer;
     btc_usd: LatestAnswer;
     icp_usd: LatestAnswer;
 };
-
-export type LatestAnswersResult = Variant<{
-    ok: LatestAnswers;
-    err: string;
-}>;
 
 export type ParseJsonRpcResponseResult = Variant<{
     ok: JsonRpcResponse;

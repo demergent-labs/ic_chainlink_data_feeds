@@ -154,7 +154,7 @@ class DemergApp extends HTMLElement {
                     </div>
                 </div>
 
-                <a href="" target="_blank" style="color: white; text-decoration: none; position: absolute; bottom: 0px; right: 0px; padding: 1rem">Open Source</a>
+                <a href="https://github.com/demergent-labs/ic_chainlink_data_feeds/blob/main/canisters/frontend/oss-attribution/attribution.txt" target="_blank" style="color: white; text-decoration: none; position: absolute; bottom: 0px; right: 0px; padding: 1rem">Open Source</a>
             </sp-theme>
 
         `;
