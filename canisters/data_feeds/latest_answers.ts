@@ -98,12 +98,12 @@ function get_consensus_info(
     };
 }
 
-function get_heaviest_answer(entries: [string, number][]): bigint | null {
-    const first_entry = entries[0];
-    const second_entry = entries[1];
+function get_heaviest_answer(sorted_entries: [string, number][]): bigint | null {
+    const first_entry = sorted_entries[0];
+    const second_entry = sorted_entries[1];
 
     if (
-        entries.length > 1 &&
+        sorted_entries.length > 1 &&
         first_entry[1] === second_entry[1]
     ) {
         return null;
@@ -111,7 +111,6 @@ function get_heaviest_answer(entries: [string, number][]): bigint | null {
 
     return BigInt(first_entry[0]);
 }
-
 
 function* get_http_response_infos_with_errors(data_feed_address: string, provider_config: ProviderConfig): Async<HttpResponseInfosWithErrors> {
     let errors: string[] = [];
