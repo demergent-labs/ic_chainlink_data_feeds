@@ -1,4 +1,4 @@
-import { Heartbeat, ic, ok } from 'azle';
+import { Heartbeat, ic } from 'azle';
 import { ONE_MINUTE_IN_NANOSECONDS } from './constants';
 import { fetch_latest_answers } from './latest_answers';
 import { state } from './state';

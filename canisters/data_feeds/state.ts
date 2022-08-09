@@ -7,7 +7,7 @@ export let state: State = {
         icp_usd: '0x84210d9013a30c6ab169e28840a6cc54b60fa042'
     },
     fetching_data_feeds: false,
-    heartbeat_minutes: 1n, // TODO set this back to 10 minutes
+    heartbeat_minutes: 10n,
     last_heartbeat: null,
     latest_answers: null,
     provider_configs: {
