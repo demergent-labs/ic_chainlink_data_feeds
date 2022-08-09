@@ -235,10 +235,17 @@ function parse_json_rpc_response(json_rpc_response_string: string, provider_url:
 }
 
 function* get_latest_answer_http_response(data_feed_address: string, provider_url: string): Async<HttpResponseResult> {
+    const max_response_bytes = 200n;
+
+    // TODO this is just a hueristic for cost, might change when the feature is officially released: https://forum.dfinity.org/t/enable-canisters-to-make-http-s-requests/9670/130
+    const cycle_cost_base = 400_000_000n;
+    const cycle_cost_per_byte = 300_000n; // TODO not sure on this exact cost
+    const cycle_cost_total = cycle_cost_base + cycle_cost_per_byte * max_response_bytes;
+
     const http_response_result: CanisterResult<HttpResponse> =
         yield ManagementCanister.http_request({
             url: provider_url,
-            max_response_bytes: 200n,
+            max_response_bytes,
             http_method: {
                 POST: null
             },
@@ -258,7 +265,7 @@ function* get_latest_answer_http_response(data_feed_address: string, provider_ur
                 })
             )),
             transform_method_name: 'get_data_feed_latest_answer_transform'
-        }).with_cycles(500_000_000n); // TODO consider breaking this out into costs
+        }).with_cycles(cycle_cost_total);
 
     return http_response_result;
 }
